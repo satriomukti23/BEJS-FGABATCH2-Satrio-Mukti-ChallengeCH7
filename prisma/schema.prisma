@@ -25,6 +25,7 @@ roleId String
 name String @unique
 email String @unique
 password String
+socket_id String?
 order Order[]
 role Role @relation(fields: [roleId], references: [id])
 }

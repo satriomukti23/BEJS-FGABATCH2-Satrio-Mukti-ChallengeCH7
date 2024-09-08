@@ -1,6 +1,7 @@
 const prisma = require('../config/prisma')
 const bcrypt = require('bcrypt')
-const { get } = require('../route/auth.route')
+const transporter = require('../config/nodemailer')
+const jwt = require('jsonwebtoken')
 
 const USER = {
 
@@ -47,8 +48,48 @@ const USER = {
         } catch (error) {
             throw new Error(error)
         }
-    }
+    },
 
+    forgotPassword : async (body) => {
+
+        const user = await prisma.user.findUnique({
+            where : {
+                email : body.email
+            }
+        })
+
+        if(!user) {
+            throw new Error('User not found')
+        }
+
+        const payload_token = {
+            id : user.id,
+            email : user.email
+        }
+
+        const token = jwt.sign(payload_token, process.env.JWT_SECRET, {
+            expiresIn : '1h'
+        })
+
+        return await transporter.sendMail({
+            from : 'admin@gmail.com',
+            to : user.email,
+            subject : 'Reset Password',
+            text : `Click this link to reset your password : http://localhost:3000/reset-password/${token}`
+        })
+    },
+
+    resetPassword : async (id, password) => {
+
+        return await prisma.user.update({
+            where : {
+                id : id
+            },
+            data : {
+                password : bcrypt.hashSync(password, 10)
+            }
+        })
+    }
 }
 
 module.exports = USER

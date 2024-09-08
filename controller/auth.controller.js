@@ -128,11 +128,57 @@ const getCurrentUser = async (req,res) => {
             message: 'Validasi Error'
         })
     }
+};
+
+const forgot = async (req,res) => {
+
+    try {
+        const result = await USER.forgotPassword(req.body.email)
+
+        if(result.status === 'Not Found'){
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        return res.status(200).json({
+            status: 'Success',
+            message: 'Reset password link sent to your email'
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message
+        })
+    }
 }
+
+const reset = async (req,res) => {
+
+    try {
+        const token = req.params.token
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const id = decoded.id
+
+        await USER.resetPassword(id, req.body.password)
+
+        return res.status(200).json({
+            status: 'Success',
+            message: 'Password reset successfully'
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message
+        })
+    }
+}
+
 
 module.exports = {
     create,
     auth,
     logout,
-    getCurrentUser
+    getCurrentUser,
+    forgot,
+    reset
 }
